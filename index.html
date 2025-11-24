@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JASON 3D Spin</title>
+
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: black;
+        }
+        #canvas {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- Font Loader -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/loaders/FontLoader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/loaders/TextGeometry.js"></script>
+
+    <script>
+        const canvas = document.getElementById("canvas");
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000000);
+
+        const camera = new THREE.PerspectiveCamera(
+            50,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            1000
+        );
+
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        camera.position.z = 50;
+
+        // Light
+        const light = new THREE.PointLight(0xffffff, 2);
+        light.position.set(20, 20, 20);
+        scene.add(light);
+
+        const ambient = new THREE.AmbientLight(0x404040);
+        scene.add(ambient);
+
+        let textMesh;
+
+        // Load font
+        const loader = new THREE.FontLoader();
+        loader.load(
+            "https://threejs.org/examples/fonts/helvetiker_bold.typeface.json",
+            function (font) {
+                const textGeo = new THREE.TextGeometry("JASON", {
+                    font: font,
+                    size: 10,
+                    height: 3,
+                    curveSegments: 12,
+                    bevelEnabled: true,
+                    bevelThickness: 0.7,
+                    bevelSize: 0.4,
+                    bevelSegments: 5,
+                });
+
+                const material = new THREE.MeshPhongMaterial({
+                    color: 0x00aaff,
+                    shininess: 120,
+                });
+
+                textMesh = new THREE.Mesh(textGeo, material);
+                textMesh.position.set(-25, -5, 0);
+                scene.add(textMesh);
+            }
+        );
+
+        // Animate
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (textMesh) {
+                textMesh.rotation.y += 0.01; // 360° loop spin
+            }
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Resize
+        window.addEventListener("resize", () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
