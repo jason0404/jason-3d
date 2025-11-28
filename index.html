@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
+    <title>Space Explorer</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>JASON 3D Spin</title>
 
     <style>
         body {
@@ -11,100 +11,135 @@
             overflow: hidden;
             background: black;
         }
-        #canvas {
-            width: 100vw;
-            height: 100vh;
+        canvas {
             display: block;
         }
     </style>
-</head>
 
-<body>
-    <canvas id="canvas"></canvas>
-
-    <!-- Three.js CDN -->
+    <!-- Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-    <!-- Font Loader -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/loaders/FontLoader.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/loaders/TextGeometry.js"></script>
+    <!-- Orbit Controls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
 
-    <script>
-        const canvas = document.getElementById("canvas");
+<canvas id="canvas"></canvas>
 
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x000000);
+<script>
+const canvas = document.getElementById("canvas");
 
-        const camera = new THREE.PerspectiveCamera(
-            50,
-            window.innerWidth / window.innerHeight,
-            0.1,
-            1000
-        );
+// Scene
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x000000);
 
-        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
+// Camera
+const camera = new THREE.PerspectiveCamera(
+    60,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    2000
+);
+camera.position.z = 60;
 
-        camera.position.z = 50;
+// Renderer
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
 
-        // Light
-        const light = new THREE.PointLight(0xffffff, 2);
-        light.position.set(20, 20, 20);
-        scene.add(light);
+// Controls
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.enableZoom = true;
+controls.autoRotate = false;
+controls.minDistance = 20;
+controls.maxDistance = 150;
 
-        const ambient = new THREE.AmbientLight(0x404040);
-        scene.add(ambient);
+// Lights
+const pointLight = new THREE.PointLight(0x44ccff, 3, 300);
+pointLight.position.set(20, 20, 20);
+scene.add(pointLight);
 
-        let textMesh;
+const ambientLight = new THREE.AmbientLight(0x222222);
+scene.add(ambientLight);
 
-        // Load font
-const loader = new THREE.FontLoader();
-loader.load(
-    "https://threejs.org/examples/fonts/helvetiker_bold.typeface.json",
-    function (font) {
-        const textGeo = new THREE.TextGeometry("JASON", {
-            font: font,
-            size: 10,
-            height: 3,
-            curveSegments: 12,
-            bevelEnabled: true,
-            bevelThickness: 0.7,
-            bevelSize: 0.4,
-            bevelSegments: 5,
-        });
+// Planet
+const planetGeometry = new THREE.SphereGeometry(12, 64, 64);
+const planetMaterial = new THREE.MeshStandardMaterial({
+    color: 0x2266ff,
+    roughness: 0.2,
+    metalness: 0.6,
+    emissive: 0x001133
+});
+const planet = new THREE.Mesh(planetGeometry, planetMaterial);
+scene.add(planet);
 
-        // Center the text
-        textGeo.center();
+// Glow Atmosphere
+const glowGeometry = new THREE.SphereGeometry(12.5, 64, 64);
+const glowMaterial = new THREE.MeshBasicMaterial({
+    color: 0x33ccff,
+    transparent: true,
+    opacity: 0.2
+});
+const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+scene.add(glow);
 
-        const material = new THREE.MeshPhongMaterial({
-            color: 0x00aaff,
-            shininess: 120,
-        });
+// Starfield
+const starGeometry = new THREE.BufferGeometry();
+const starCount = 2000;
+const starVertices = [];
 
-        textMesh = new THREE.Mesh(textGeo, material);
-        scene.add(textMesh);
-    }
+for (let i = 0; i < starCount; i++) {
+    starVertices.push(
+        (Math.random() - 0.5) * 2000,
+        (Math.random() - 0.5) * 2000,
+        (Math.random() - 0.5) * 2000
+    );
+}
+
+starGeometry.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute(starVertices, 3)
 );
 
+const starMaterial = new THREE.PointsMaterial({
+    color: 0xffffff,
+    size: 1
+});
 
-        // Animate
-        function animate() {
-            requestAnimationFrame(animate);
+const stars = new THREE.Points(starGeometry, starMaterial);
+scene.add(stars);
 
-            if (textMesh) {
-                textMesh.rotation.y += 0.01; // 360° loop spin
-            }
+// Light animation
+let t = 0;
 
-            renderer.render(scene, camera);
-        }
-        animate();
+// Render loop
+function animate() {
+    requestAnimationFrame(animate);
 
-        // Resize
-        window.addEventListener("resize", () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-    </script>
+    planet.rotation.y += 0.003;
+    planet.rotation.x += 0.0005;
+    glow.rotation.y -= 0.002;
+
+    t += 0.01;
+    pointLight.position.x = Math.sin(t) * 30;
+    pointLight.position.y = Math.cos(t) * 20;
+    pointLight.position.z = Math.cos(t) * 30;
+
+    controls.update();
+
+    renderer.render(scene, camera);
+}
+animate();
+
+// Resize
+window.addEventListener("resize", () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+
 </body>
 </html>
